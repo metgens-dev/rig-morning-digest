@@ -62,4 +62,18 @@ describe('digest page', () => {
     expect(res.status).toBe(200);
     expect(await res.text()).toContain('nothing ran');
   });
+
+  it('renders valid rows when the night contains a malformed line', async () => {
+    writeFileSync(
+      join(runsDir, '2026-10-31.jsonl'),
+      ['not json', '{"at":"2026-10-31T01:00:00+01:00","job":"alpha","status":"ok","owner":"rook"}'].join(
+        '\n',
+      ),
+    );
+
+    const res = await app().request('/digest/2026-10-31');
+
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain('<td>alpha</td>');
+  });
 });

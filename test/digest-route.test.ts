@@ -53,4 +53,13 @@ describe('digest JSON', () => {
 
     expect(response.status).toBe(404);
   });
+
+  it('returns an empty array for an empty night', async () => {
+    writeFileSync(join(runsDir, '2026-10-30.jsonl'), '');
+
+    const response = await createApp(config).request('/api/digest/2026-10-30');
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([]);
+  });
 });
