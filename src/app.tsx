@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import { loadConfig, type RigConfig } from './config.js';
+import { readNight } from './digest/read.js';
 import { lane } from './lane.js';
 import { readStatus } from './status.js';
+import { Digest } from './views/digest.js';
 import { Layout } from './views/layout.js';
 import { StatusBoard } from './views/status.js';
 
@@ -9,6 +11,24 @@ export function createApp(config: RigConfig = loadConfig()) {
   const app = new Hono();
 
   app.get('/health', (c) => c.json({ ok: true, lane: lane().id }));
+
+  app.get('/digest/:night', (c) => {
+    let rows;
+    try {
+      rows = readNight(config.runsDir, c.req.param('night'));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return c.notFound();
+      }
+      throw error;
+    }
+
+    return c.html(
+      <Layout title={`digest · ${c.req.param('night')}`} lane={lane()}>
+        <Digest night={c.req.param('night')} rows={rows} />
+      </Layout>,
+    );
+  });
 
   app.get('/', (c) =>
     c.html(
