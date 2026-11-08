@@ -1,8 +1,9 @@
 ---
 plan: morning-digest
-status: ready
+status: done
 owner: rook
 opened: 2026-10-29
+closed: 2026-11-08
 ---
 
 # Morning digest
@@ -77,3 +78,16 @@ page again with `LANE_MARKER` unset (the banner reads "no marker set") and uploa
 link. Move this plan to `docs/plans/done/` with its issue list.
 
 Done when: the preview link no longer shows the lane marker.
+
+## Issues
+
+| # | Issue | Blocked by | Worker | Closed |
+|---|-------|------------|--------|--------|
+| 1 | Digest types | — | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
+| 2 | Run-log reader | #1 | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
+| 3 | Digest page | #1, #2 | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
+| 4 | Digest JSON | #1, #2 | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
+| 5 | Board digest links | #1, #2 | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
+| 6 | Digest route tests | #3, #4 | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
+| 7 | Public review preview | #3, #4, #5, #6 | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
+| 8 | Remove marker and archive plan | #7 | pi subagent · GPT-5.6 Terra · default | 2026-11-08 |
