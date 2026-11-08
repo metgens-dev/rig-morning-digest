@@ -1,0 +1,47 @@
+name: Publish digest preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable && pnpm install --no-frozen-lockfile
+      - name: Save digest as one HTML file
+        env:
+          LANE_MARKER: ${{ vars.LANE_MARKER }}
+          PORT: '8787'
+        run: |
+          pnpm start > "$RUNNER_TEMP/rig.log" 2>&1 &
+          rig_pid=$!
+          trap 'kill "$rig_pid"' EXIT
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error http://127.0.0.1:8787/digest/2026-10-28 > "$RUNNER_TEMP/index.html"; then
+              break
+            fi
+            sleep 1
+          done
+          test -s "$RUNNER_TEMP/index.html"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/index.html
+      - id: deployment
+        uses: actions/deploy-pages@v4
