@@ -13,21 +13,35 @@ export function createApp(config: RigConfig = loadConfig()) {
   app.get('/health', (c) => c.json({ ok: true, lane: lane().id }));
 
   app.get('/digest/:night', (c) => {
+    const night = c.req.param('night');
     let rows;
     try {
-      rows = readNight(config.runsDir, c.req.param('night'));
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      rows = readNight(config.runsDir, night).sort((left, right) => left.job.localeCompare(right.job));
+    } catch (error: unknown) {
+      if (isMissingFile(error)) {
         return c.notFound();
       }
       throw error;
     }
 
     return c.html(
-      <Layout title={`digest · ${c.req.param('night')}`} lane={lane()}>
-        <Digest night={c.req.param('night')} rows={rows} />
+      <Layout title={`digest · ${night}`} lane={lane()}>
+        <Digest night={night} rows={rows} />
       </Layout>,
     );
+  });
+
+  app.get('/api/digest/:night', (c) => {
+    try {
+      const rows = readNight(config.runsDir, c.req.param('night'));
+      return c.json(rows.sort((left, right) => left.job.localeCompare(right.job)));
+    } catch (error: unknown) {
+      if (isMissingFile(error)) {
+        return c.notFound();
+      }
+
+      throw error;
+    }
   });
 
   app.get('/', (c) =>
@@ -39,4 +53,8 @@ export function createApp(config: RigConfig = loadConfig()) {
   );
 
   return app;
+}
+
+function isMissingFile(error: unknown): error is NodeJS.ErrnoException {
+  return typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT';
 }
