@@ -12,6 +12,14 @@ type RunEvent = {
   error?: string;
 };
 
+function isBlank(value: string) {
+  return value.trim().length === 0;
+}
+
+function optionalString(value: string | null | undefined) {
+  return value === undefined || value === null || isBlank(value) ? null : value;
+}
+
 function isRunEvent(value: unknown): value is RunEvent {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
@@ -20,7 +28,9 @@ function isRunEvent(value: unknown): value is RunEvent {
   const event = value as Record<string, unknown>;
   return (
     typeof event.at === 'string' &&
+    !isBlank(event.at) &&
     typeof event.job === 'string' &&
+    !isBlank(event.job) &&
     (event.status === 'ok' || event.status === 'retry' || event.status === 'fail') &&
     (typeof event.owner === 'string' || event.owner === null) &&
     (event.error === undefined || typeof event.error === 'string')
@@ -56,11 +66,11 @@ export function readNight(runsDir: string, night: string): DigestRow[] {
     if (existing === undefined) {
       rowsByJob.set(value.job, {
         job: value.job,
-        owner: value.owner,
+        owner: optionalString(value.owner),
         runs: 1,
         retries: value.status === 'retry' ? 1 : 0,
         lastStatus: value.status,
-        lastError: value.error ?? null,
+        lastError: optionalString(value.error),
         firstAt: value.at,
         lastAt: value.at,
       });
@@ -70,7 +80,7 @@ export function readNight(runsDir: string, night: string): DigestRow[] {
     existing.runs += 1;
     existing.retries += value.status === 'retry' ? 1 : 0;
     existing.lastStatus = value.status;
-    existing.lastError = value.error ?? null;
+    existing.lastError = optionalString(value.error);
     existing.lastAt = value.at;
   }
 

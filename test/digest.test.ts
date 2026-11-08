@@ -1,5 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterAll, describe, expect, it } from 'vitest';
 import { readNight } from '../src/digest/read.js';
+
+const runsDir = mkdtempSync(join(tmpdir(), 'rig-digest-reader-'));
+
+afterAll(() => rmSync(runsDir, { force: true, recursive: true }));
 
 describe('readNight', () => {
   it('aggregates the fixture into five jobs and skips its malformed line', () => {
@@ -53,6 +60,30 @@ describe('readNight', () => {
         lastError: null,
         firstAt: '2026-10-29T05:41:09+01:00',
         lastAt: '2026-10-29T05:41:09+01:00',
+      },
+    ]);
+  });
+
+  it('normalizes blank optional fields and skips blank job or timestamp fields', () => {
+    writeFileSync(
+      join(runsDir, 'blank-fields.jsonl'),
+      [
+        '{"at":"2026-11-08T05:00:00+01:00","job":"report","status":"fail","owner":"  ","error":"\\t"}',
+        '{"at":" ","job":"missing-time","status":"ok","owner":null}',
+        '{"at":"2026-11-08T05:01:00+01:00","job":"\\t","status":"ok","owner":null}',
+      ].join('\n'),
+    );
+
+    expect(readNight(runsDir, 'blank-fields')).toEqual([
+      {
+        job: 'report',
+        owner: null,
+        runs: 1,
+        retries: 0,
+        lastStatus: 'fail',
+        lastError: null,
+        firstAt: '2026-11-08T05:00:00+01:00',
+        lastAt: '2026-11-08T05:00:00+01:00',
       },
     ]);
   });
